@@ -150,7 +150,31 @@ class BBox extends Component {
 
     this.mouse.realX = this.zoomXInv(this.mouse.x)
     this.mouse.realY = this.zoomYInv(this.mouse.y)
+    if (event.type === "mousedown") {
+      this.mouse.startRealX = this.mouse.realX
+      this.mouse.startRealY = this.mouse.realY
+
+      if (event.which === 3) {
+        this.mouse.buttonR = true
+      } else if (event.which === 1) {
+        this.mouse.buttonL = true
+      }
+    } else if (event.type === "mouseup" || event.type === "mouseout") {
+      this.mouse.buttonR = false
+      this.mouse.buttonL = false
+    }
+    this.panImage(xx, yy)
     this.redraw()
+  }
+
+  panImage = (xx, yy) => {
+    if (this.mouse.buttonR === true) {
+      this.canvasX -= this.mouse.realX - xx
+      this.canvasY -= this.mouse.realY - yy
+
+      this.mouse.realX = this.zoomXInv(this.mouse.x)
+      this.mouse.realY = this.zoomYInv(this.mouse.y)
+    }
   }
 
   get node_rect () {
