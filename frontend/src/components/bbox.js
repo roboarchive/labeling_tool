@@ -133,7 +133,7 @@ class BBox extends Component {
 
     this.realX = this.zoomXInv(this.mouse.x)
     this.realY = this.zoomYInv(this.mouse.y)
-    this.redraw(this.image)
+
     console.log(`CX: ${this.canvasX} CY: ${this.canvasY} SX: ${this.screenX} SY: ${this.screenY}`)
 
     event.preventDefault()
@@ -150,12 +150,10 @@ class BBox extends Component {
 
     this.mouse.realX = this.zoomXInv(this.mouse.x)
     this.mouse.realY = this.zoomYInv(this.mouse.y)
+    if (this.image) {
+      this.redraw(this.image)
+    }
   }
-
-  /*drawImage = (context) => {
-    context.drawImage(this.state.image.object,
-                      zoomX(0), zoomY(0), zoom(currentImage.width), zoom(currentImage.height))
-                      }*/
 
   get node_rect () {
     return this.node_ref.current.getBoundingClientRect();
@@ -200,6 +198,7 @@ class BBox extends Component {
     const [x, y, dx, dy] = [this.zoomX(0), this.zoomY(0), this.zoom(img.width), this.zoom(img.height)]
     this.setState({msg: `X: ${x} Y: ${y}  dX: ${dx} dY: ${dy}`})
     this.canvas.drawImage(img, x, y, dx, dy)
+    this.drawCross()
   }
 
   loadDefaultImage() {
@@ -210,12 +209,25 @@ class BBox extends Component {
   }
 
   fitZoom = (image) => {
-    return
     if (image.width > image.height) {
       this.setState({scale: this.width / image.width})
     } else {
       this.setState({scale: this.height / image.height})
     }
+  }
+
+  drawCross = () => {
+    this.canvas.setLineDash([5])
+
+    this.canvas.beginPath()
+    this.canvas.moveTo(this.zoomX(this.mouse.realX), this.zoomY(0))
+    this.canvas.lineTo(this.zoomX(this.mouse.realX), this.zoomY(this.image.height))
+    this.canvas.stroke()
+
+    this.canvas.beginPath()
+    this.canvas.moveTo(this.zoomX(0), this.zoomY(this.mouse.realY))
+    this.canvas.lineTo(this.zoomX(this.image.width), this.zoomY(this.mouse.realY))
+    this.canvas.stroke()
   }
 
   render() {
