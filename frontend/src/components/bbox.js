@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 
 
 const minZoom = 0.1 // Smallest zoom allowed
-const maxZoom = 5 // Largest zoom allowed
+const maxZoom = 15 // Largest zoom allowed
 const scrollSpeed = 1.1 // Multiplying factor of wheel speed
 
 /*
@@ -120,9 +120,9 @@ class BBox extends Component {
 
   trackWheel = (event) => {
     if (event.deltaY < 0) {
-      this.setState({scale: Math.min(maxZoom, this.state.scale * scrollSpeed)})
+      this.setState({scale: Math.min(maxZoom, this.state.scale * scrollSpeed)}, this.redraw)
     } else {
-      this.setState({scale: Math.max(minZoom, this.state.scale * (1 / scrollSpeed))})
+      this.setState({scale: Math.max(minZoom, this.state.scale * (1 / scrollSpeed))}, this.redraw)
     }
     this.mouse_clone = {...event}
     console.log(event)
@@ -150,9 +150,7 @@ class BBox extends Component {
 
     this.mouse.realX = this.zoomXInv(this.mouse.x)
     this.mouse.realY = this.zoomYInv(this.mouse.y)
-    if (this.image) {
-      this.redraw(this.image)
-    }
+    this.redraw()
   }
 
   get node_rect () {
@@ -190,10 +188,10 @@ class BBox extends Component {
     const img = this.image
     console.log(img)
     this.fitZoom(img)
-    this.redraw(img)
   }
 
-  redraw = (img) => {
+  redraw = () => {
+    const img = this.image
     this.canvas.clearRect(0, 0, this.width, this.height)
     const [x, y, dx, dy] = [this.zoomX(0), this.zoomY(0), this.zoom(img.width), this.zoom(img.height)]
     this.setState({msg: `X: ${x} Y: ${y}  dX: ${dx} dY: ${dy}`})
@@ -210,9 +208,9 @@ class BBox extends Component {
 
   fitZoom = (image) => {
     if (image.width > image.height) {
-      this.setState({scale: this.width / image.width})
+      this.setState({scale: this.width / image.width}, this.redraw)
     } else {
-      this.setState({scale: this.height / image.height})
+      this.setState({scale: this.height / image.height}, this.redraw)
     }
   }
 
