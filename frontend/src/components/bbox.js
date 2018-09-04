@@ -107,7 +107,8 @@ class BBox extends Component {
     canvas.addEventListener('mousedown', this.trackPointer)
     canvas.addEventListener('mouseup', this.trackPointer)
     canvas.addEventListener('mouseout', this.trackPointer)
-    window.addEventListener("resize", this.setSize)
+    canvas.addEventListener('keypress', this.trackKeyboard)
+    window.addEventListener('resize', this.setSize)
     window.cvs = this.canvas_ref.current
     this.setSize()
     this.loadDefaultImage()
@@ -121,7 +122,25 @@ class BBox extends Component {
     canvas.removeEventListener('mousedown', this.trackPointer)
     canvas.removeEventListener('mouseup', this.trackPointer)
     canvas.removeEventListener('mouseout', this.trackPointer)
-    window.removeEventListener("resize", this.setSize);
+    canvas.removeEventListener('keypress', this.trackKeyboard)
+    window.removeEventListener('resize', this.setSize);
+  }
+
+  trackKeyboard = (event) => {
+    console.log(event)
+    if (event.key === 'Delete' || event.key === 'd') {
+      if (this.currentBbox !== null) {
+        this.bboxes[this.image.name][this.currentBbox.bbox.class].splice(this.currentBbox.index, 1)
+        this.currentBbox = null
+        document.body.style.cursor = "default"
+      }
+      this.redraw()
+      event.preventDefault()
+    }
+    if (event.key === 's') {
+      this.setBboxMarkedState()
+      this.currentBbox = null
+    }
   }
 
   trackWheel = (event) => {
@@ -188,8 +207,86 @@ class BBox extends Component {
       this.mouse.buttonR = false
       this.mouse.buttonL = false
     }
+    this.moveBbox()
+    this.resizeBbox()
+    this.changeCursorByLocation()
     this.panImage(xx, yy)
     this.redraw()
+  }
+
+  moveBbox = () => {
+    const {mouse, currentBbox} = this
+    if (mouse.buttonL === true && currentBbox !== null) {
+      const endX = currentBbox.bbox.x + currentBbox.bbox.width
+      const endY = currentBbox.bbox.y + currentBbox.bbox.height
+
+      // Only if pointer inside the bbox
+      if (mouse.startRealX >= (currentBbox.bbox.x + edgeSize) && mouse.startRealX <= (endX - edgeSize)
+          && mouse.startRealY >= (currentBbox.bbox.y + edgeSize) && mouse.startRealY <= (endY - edgeSize)) {
+
+        currentBbox.moving = true
+      }
+
+      if (currentBbox.moving === true) {
+        currentBbox.bbox.x = currentBbox.originalX + (mouse.realX - mouse.startRealX)
+        currentBbox.bbox.y = currentBbox.originalY + (mouse.realY - mouse.startRealY)
+      }
+    }
+  }
+
+  resizeBbox = () => {
+    const {mouse, currentBbox} = this
+    if (mouse.buttonL === true && currentBbox !== null) {
+      const topLeftX = currentBbox.bbox.x
+      const topLeftY = currentBbox.bbox.y
+      const bottomLeftX = currentBbox.bbox.x
+      const bottomLeftY = currentBbox.bbox.y + currentBbox.bbox.height
+      const topRightX = currentBbox.bbox.x + currentBbox.bbox.width
+      const topRightY = currentBbox.bbox.y
+      const bottomRightX = currentBbox.bbox.x + currentBbox.bbox.width
+      const bottomRightY = currentBbox.bbox.y + currentBbox.bbox.height
+
+      // Get correct corner
+      if (mouse.startRealX >= (topLeftX - edgeSize) && mouse.startRealX <= (topLeftX + edgeSize)
+          && mouse.startRealY >= (topLeftY - edgeSize) && mouse.startRealY <= (topLeftY + edgeSize)) {
+
+        currentBbox.resizing = "topLeft"
+      } else if (mouse.startRealX >= (bottomLeftX - edgeSize) && mouse.startRealX <= (bottomLeftX + edgeSize)
+                 && mouse.startRealY >= (bottomLeftY - edgeSize) && mouse.startRealY <= (bottomLeftY + edgeSize)) {
+
+        currentBbox.resizing = "bottomLeft"
+      } else if (mouse.startRealX >= (topRightX - edgeSize) && mouse.startRealX <= (topRightX + edgeSize)
+                 && mouse.startRealY >= (topRightY - edgeSize) && mouse.startRealY <= (topRightY + edgeSize)) {
+
+        currentBbox.resizing = "topRight"
+      } else if (mouse.startRealX >= (bottomRightX - edgeSize) && mouse.startRealX <= (bottomRightX + edgeSize)
+                 && mouse.startRealY >= (bottomRightY - edgeSize) && mouse.startRealY <= (bottomRightY + edgeSize)) {
+
+        currentBbox.resizing = "bottomRight"
+      }
+
+      if (currentBbox.resizing === "topLeft") {
+        currentBbox.bbox.x = mouse.realX
+        currentBbox.bbox.y = mouse.realY
+        currentBbox.bbox.width = currentBbox.originalX + currentBbox.originalWidth - mouse.realX
+        currentBbox.bbox.height = currentBbox.originalY + currentBbox.originalHeight - mouse.realY
+      } else if (currentBbox.resizing === "bottomLeft") {
+        currentBbox.bbox.x = mouse.realX
+        currentBbox.bbox.y = mouse.realY - (mouse.realY - currentBbox.originalY)
+        currentBbox.bbox.width = currentBbox.originalX + currentBbox.originalWidth - mouse.realX
+        currentBbox.bbox.height = mouse.realY - currentBbox.originalY
+      } else if (currentBbox.resizing === "topRight") {
+        currentBbox.bbox.x = mouse.realX - (mouse.realX - currentBbox.originalX)
+        currentBbox.bbox.y = mouse.realY
+        currentBbox.bbox.width = mouse.realX - currentBbox.originalX
+        currentBbox.bbox.height = currentBbox.originalY + currentBbox.originalHeight - mouse.realY
+      } else if (currentBbox.resizing === "bottomRight") {
+        currentBbox.bbox.x = mouse.realX - (mouse.realX - currentBbox.originalX)
+        currentBbox.bbox.y = mouse.realY - (mouse.realY - currentBbox.originalY)
+        currentBbox.bbox.width = mouse.realX - currentBbox.originalX
+        currentBbox.bbox.height = mouse.realY - currentBbox.originalY
+      }
+    }
   }
 
   storeNewBbox = (movedWidth, movedHeight) => {
@@ -198,7 +295,8 @@ class BBox extends Component {
       y: Math.min(this.mouse.startRealY, this.mouse.realY),
       width: movedWidth,
       height: movedHeight,
-      marked: true
+      marked: true,
+      class: this.currentClass
     }
 
     if (typeof this.bboxes[this.image.name] === "undefined") {
@@ -394,6 +492,66 @@ class BBox extends Component {
     }
   }
 
+  changeCursorByLocation = () => {
+    const {mouse, currentBbox} = this
+
+    if (this.image !== null) {
+      const currentBboxes = this.bboxes[this.image.name]
+
+      for (let className in currentBboxes) {
+        for (let i = 0; i < currentBboxes[className].length; i++) {
+          const bbox = currentBboxes[className][i]
+
+          const endX = bbox.x + bbox.width
+          const endY = bbox.y + bbox.height
+
+          if (mouse.realX >= (bbox.x + edgeSize) && mouse.realX <= (endX - edgeSize)
+              && mouse.realY >= (bbox.y + edgeSize) && mouse.realY <= (endY - edgeSize)) {
+
+            document.body.style.cursor = "pointer"
+
+            break
+          } else {
+            document.body.style.cursor = "default"
+          }
+        }
+      }
+
+      if (currentBbox !== null) {
+        const topLeftX = currentBbox.bbox.x
+        const topLeftY = currentBbox.bbox.y
+        const bottomLeftX = currentBbox.bbox.x
+        const bottomLeftY = currentBbox.bbox.y + currentBbox.bbox.height
+        const topRightX = currentBbox.bbox.x + currentBbox.bbox.width
+        const topRightY = currentBbox.bbox.y
+        const bottomRightX = currentBbox.bbox.x + currentBbox.bbox.width
+        const bottomRightY = currentBbox.bbox.y + currentBbox.bbox.height
+
+        if (mouse.realX >= (topLeftX + edgeSize) && mouse.realX <= (bottomRightX - edgeSize)
+            && mouse.realY >= (topLeftY + edgeSize) && mouse.realY <= (bottomRightY - edgeSize)) {
+
+          document.body.style.cursor = "move"
+        } else if (mouse.realX >= (topLeftX - edgeSize) && mouse.realX <= (topLeftX + edgeSize)
+                   && mouse.realY >= (topLeftY - edgeSize) && mouse.realY <= (topLeftY + edgeSize)) {
+          document.body.style.cursor = "nwse-resize"
+
+        } else if (mouse.realX >= (bottomLeftX - edgeSize) && mouse.realX <= (bottomLeftX + edgeSize)
+                   && mouse.realY >= (bottomLeftY - edgeSize) && mouse.realY <= (bottomLeftY + edgeSize)) {
+
+          document.body.style.cursor = "nesw-resize"
+        } else if (mouse.realX >= (topRightX - edgeSize) && mouse.realX <= (topRightX + edgeSize)
+                   && mouse.realY >= (topRightY - edgeSize) && mouse.realY <= (topRightY + edgeSize)) {
+
+          document.body.style.cursor = "nesw-resize"
+        } else if (mouse.realX >= (bottomRightX - edgeSize) && mouse.realX <= (bottomRightX + edgeSize)
+                   && mouse.realY >= (bottomRightY - edgeSize) && mouse.realY <= (bottomRightY + edgeSize)) {
+
+          document.body.style.cursor = "nwse-resize"
+        }
+      }
+    }
+  }
+
   drawX = (context, x, y, width, height) => {
     if (drawCenterX === true) {
       const centerX = x + width / 2
@@ -523,7 +681,7 @@ class BBox extends Component {
         <h1>This is BBOX {this.height} {this.width} Scale: {this.state.scale}</h1>
         {this.image && (<div>{this.image.height} / {this.image.width}</div>)}
         <div>{this.state.msg}</div>
-        <canvas className='bbox-canvas' ref={this.canvas_ref}></canvas>
+        <canvas className='bbox-canvas' ref={this.canvas_ref} tabindex="1"></canvas>
       </div>
     )
   }
