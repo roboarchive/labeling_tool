@@ -1,28 +1,50 @@
 .App {
-  text-align: center;
+    display: grid;
+    height: calc(90vh - 30px);
+    grid-template-rows: 30px auto;
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 80px;
+.menu {
+    grid-row: 1/2;
+    display: flex;
+    justify-content: flex-start;
+    flex-flow: row wrap;
 }
 
-.App-header {
-  background-color: #222;
-  height: 150px;
-  padding: 20px;
-  color: white;
+.menu-item {
+    width: 100px;
+    color: blue;
+    border: solid aqua 1px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 1.5em;
 }
 
-.App-title {
-  font-size: 1.5em;
+.ltool {
+    margin-top: 10px;
+    display: inline-grid;
+    grid-gap: 3px;
+    grid-row: 2/2;
+    grid-template-columns: 200px auto;
 }
 
-.App-intro {
-  font-size: large;
+.lselect {
+    grind-column: 1/2;
+    border: solid 1px;
 }
 
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.lselect > select {
+    margin-top: 5px;
+    border: solid green 2px;
+    width: 100%;
+    overflow: hidden;
+}
+
+
+.bbox {
+    grid-column: 2/2;
+}
+
+.bbox-canvas {
+    border: solid 1px;
 }

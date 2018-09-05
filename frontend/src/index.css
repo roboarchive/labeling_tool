@@ -1,26 +1,3 @@
 body {
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
-    # overflow: hidden;
-}
 
-.App {
-    display: block;
-    position: absolute;
-    height: auto;
-    bottom: 0;
-    top: 0;
-    left: 0;
-    right: 0;
-}
-
-.bbox {
-    height: calc(100% - 400px);
-    width: auto;
-    padding: 10px;
-}
-
-.bbox-canvas {
-    border: solid 1px;
 }

@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 
 const minZoom = 0.1 // Smallest zoom allowed
@@ -14,48 +15,22 @@ const backgroundColor = "rgba(0, 116, 217, 0.2)" // Base bbox fill color
 const markedBorderColor = "#FF4136" // Marked bbox border color
 const markedBackgroundColor = "rgba(255, 133, 27, 0.2)" // Marked bbox fill color
 
-/*
-const markedFontColor = "#FF4136" // Marked bbox font color
-const saveInterval = 60 // Bbox recovery save in seconds
-const fontBaseSize = 30 // Text size in pixels
-const fontColor = "#001f3f" // Base font color
-const scrollSpeed = 1.1 // Multiplying factor of wheel speed
-const minZoom = 0.1 // Smallest zoom allowed
-const maxZoom = 5 // Largest zoom allowed
-
-const resetCanvasOnChange = true // Whether to return to default position and zoom on image change
-const defaultScale = 0.5 // Default zoom level for images. Can be overridden with fittedZoom
-
-const drawGuidelines = true // Whether to draw guidelines for cursor
-const fittedZoom = true // Whether to fit image in the screen by it's largest dimension. Overrides defaultScale
-*/
-/*
-const zoom = (number) => {
-  return Math.floor(number * scale)
-}
-
-const zoomX = (number) => {
-  return Math.floor((number - canvasX) * scale + screenX)
-}
-
-const zoomY = (number) => {
-  return Math.floor((number - canvasY) * scale + screenY)
-}
-
-const zoomXInv = (number) => {
-  return Math.floor((number - screenX) * (1 / scale) + canvasX)
-}
-
-const zoomYInv = (number) => {
-  return Math.floor((number - screenY) * (1 / scale) + canvasY)
-}*/
-
 
 function prevent (e) {
   e.preventDefault()
 }
 
 class BBox extends Component {
+  static defaultProps = {
+    existing_bboxes: {}
+  }
+
+  static propTypes = {
+    image: PropTypes.object.isRequired,
+    currentClass: PropTypes.string.isRequired,
+    existing_bboxes: PropTypes.object,
+  }
+
   constructor(props) {
     super(props)
     this.node_ref = React.createRef()
@@ -65,8 +40,12 @@ class BBox extends Component {
       msg: '',
     }
     this.currentBbox = null
-    this.currentClass = 'word'
-    this.bboxes = {}
+    this.bboxes = props.existing_bboxes
+    this.event_listeners = {}
+  }
+
+  get currentClass() {
+    return this.props.currentClass
   }
 
   setSize = () => {
@@ -98,48 +77,52 @@ class BBox extends Component {
     }
   }
 
-  componentDidMount() {
-    console.log(this.canvas_ref)
+  addListener = (event, listener, ...rest) => {
     const canvas = this.canvas_ref.current
-    canvas.addEventListener('contextmenu', prevent, false)
-    canvas.addEventListener('wheel', this.trackWheel, {passive: false})
-    canvas.addEventListener('mousemove', this.trackPointer)
-    canvas.addEventListener('mousedown', this.trackPointer)
-    canvas.addEventListener('mouseup', this.trackPointer)
-    canvas.addEventListener('mouseout', this.trackPointer)
-    canvas.addEventListener('keypress', this.trackKeyboard)
+    canvas.addEventListener(event, listener, ...rest)
+    if (!this.event_listeners[event]) {
+      this.event_listeners[event] = []
+    }
+    this.event_listeners[event].push(listener)
+  }
+
+  componentDidMount() {
+    this.addListener('contextmenu', prevent, false)
+    this.addListener('wheel', this.trackWheel, {passive: false}) // zoom
+    this.addListener('keypress', this.trackKeyboard)
+    const a = ['mousemove', 'mousedown', 'mouseup', 'mouseout']
+    a.forEach((x) => {this.addListener(x, this.trackPointer)})
     window.addEventListener('resize', this.setSize)
     window.cvs = this.canvas_ref.current
     this.setSize()
-    this.loadDefaultImage()
+    this.redraw()
   }
 
   componentWillUnmount() {
     const canvas = this.canvas_ref.current
-    canvas.removeEventListener('contextmenu', prevent)
-    canvas.removeEventListener('wheel', this.trackWheel)
-    canvas.removeEventListener('mousemove', this.trackPointer)
-    canvas.removeEventListener('mousedown', this.trackPointer)
-    canvas.removeEventListener('mouseup', this.trackPointer)
-    canvas.removeEventListener('mouseout', this.trackPointer)
-    canvas.removeEventListener('keypress', this.trackKeyboard)
+    for (const event of this.event_listeners) {
+      for (const listener of this.event_listeners.pop()){
+        canvas.removeEventListener(event, listener)
+      }
+    }
     window.removeEventListener('resize', this.setSize);
   }
 
   trackKeyboard = (event) => {
-    console.log(event)
-    if (event.key === 'Delete' || event.key === 'd') {
+    if (event.key === 'Delete' || event.key === 'd' || event.key === 'm') {
       if (this.currentBbox !== null) {
-        this.bboxes[this.image.name][this.currentBbox.bbox.class].splice(this.currentBbox.index, 1)
+        this.bboxes[this.currentBbox.bbox.class].splice(this.currentBbox.index, 1)
         this.currentBbox = null
         document.body.style.cursor = "default"
       }
       this.redraw()
       event.preventDefault()
     }
-    if (event.key === 's') {
+    if (event.key === 's' || event.key === 'n') {
       this.setBboxMarkedState()
       this.currentBbox = null
+      this.redraw()
+      event.preventDefault()
     }
   }
 
@@ -150,7 +133,6 @@ class BBox extends Component {
       this.setState({scale: Math.max(minZoom, this.state.scale * (1 / scrollSpeed))}, this.redraw)
     }
     this.mouse_clone = {...event}
-    console.log(event)
     this.canvasX = this.mouse.realX
     this.canvasY = this.mouse.realY
     this.screenX = this.mouse.x
@@ -158,9 +140,6 @@ class BBox extends Component {
 
     this.realX = this.zoomXInv(this.mouse.x)
     this.realY = this.zoomYInv(this.mouse.y)
-
-    console.log(`CX: ${this.canvasX} CY: ${this.canvasY} SX: ${this.screenX} SY: ${this.screenY}`)
-
     event.preventDefault()
   }
 
@@ -299,19 +278,15 @@ class BBox extends Component {
       class: this.currentClass
     }
 
-    if (typeof this.bboxes[this.image.name] === "undefined") {
-      this.bboxes[this.image.name] = {}
+    if (typeof this.bboxes[this.currentClass] === "undefined") {
+      this.bboxes[this.currentClass] = []
     }
 
-    if (typeof this.bboxes[this.image.name][this.currentClass] === "undefined") {
-      this.bboxes[this.image.name][this.currentClass] = []
-    }
-
-    this.bboxes[this.image.name][this.currentClass].push(bbox)
+    this.bboxes[this.currentClass].push(bbox)
 
     this.currentBbox = {
       bbox: bbox,
-      index: this.bboxes[this.image.name][this.currentClass].length - 1,
+      index: this.bboxes[this.currentClass].length - 1,
       originalX: bbox.x,
       originalY: bbox.y,
       originalWidth: bbox.width,
@@ -408,7 +383,7 @@ class BBox extends Component {
     const mouse = this.mouse
 
     if (currentBbox === null || (currentBbox.moving === false && currentBbox.resizing === null)) {
-      const currentBboxes = this.bboxes[this.image.name]
+      const currentBboxes = this.bboxes
 
       let wasInside = false
       let smallestBbox = Number.MAX_SAFE_INTEGER
@@ -452,42 +427,33 @@ class BBox extends Component {
   }
 
   drawNewBbox = () => {
-    const mouse = this.mouse
-    const context = this.canvas
-
+    const {mouse, canvas} = this
     if (mouse.buttonL === true && this.currentClass !== null && this.currentBbox === null) {
       const width = (mouse.realX - mouse.startRealX)
       const height = (mouse.realY - mouse.startRealY)
 
-      this.setBBoxStyles(context, true)
-      context.strokeRect(this.zoomX(mouse.startRealX), this.zoomY(mouse.startRealY), this.zoom(width), this.zoom(height))
-      context.fillRect(this.zoomX(mouse.startRealX), this.zoomY(mouse.startRealY), this.zoom(width), this.zoom(height))
+      this.setBBoxStyles(canvas, true)
+      canvas.strokeRect(this.zoomX(mouse.startRealX), this.zoomY(mouse.startRealY), this.zoom(width), this.zoom(height))
+      canvas.fillRect(this.zoomX(mouse.startRealX), this.zoomY(mouse.startRealY), this.zoom(width), this.zoom(height))
 
-      this.drawX(context, mouse.startRealX, mouse.startRealY, width, height)
-
-      this.setBboxCoordinates(mouse.startRealX, mouse.startRealY, width, height)
+      this.drawX(canvas, mouse.startRealX, mouse.startRealY, width, height)
     }
   }
 
   drawExistingBboxes = () => {
-    const context = this.canvas
+    const {canvas} = this
 
-    const currentBboxes = this.bboxes[this.image.name]
+    const currentBboxes = this.bboxes
 
     for (let className in currentBboxes) {
       currentBboxes[className].forEach(bbox => {
-        // setFontStyles(context, bbox.marked)
-        context.fillText(className, this.zoomX(bbox.x), this.zoomY(bbox.y - 2))
+        // setFontStyles(canvas, bbox.marked)
+        canvas.fillText(className, this.zoomX(bbox.x), this.zoomY(bbox.y - 2))
 
-        this.setBBoxStyles(context, bbox.marked)
-        context.strokeRect(this.zoomX(bbox.x), this.zoomY(bbox.y), this.zoom(bbox.width), this.zoom(bbox.height))
-        context.fillRect(this.zoomX(bbox.x), this.zoomY(bbox.y), this.zoom(bbox.width), this.zoom(bbox.height))
-
-        this.drawX(context, bbox.x, bbox.y, bbox.width, bbox.height)
-
-        if (bbox.marked === true) {
-          this.setBboxCoordinates(bbox.x, bbox.y, bbox.width, bbox.height)
-        }
+        this.setBBoxStyles(canvas, bbox.marked)
+        canvas.strokeRect(this.zoomX(bbox.x), this.zoomY(bbox.y), this.zoom(bbox.width), this.zoom(bbox.height))
+        canvas.fillRect(this.zoomX(bbox.x), this.zoomY(bbox.y), this.zoom(bbox.width), this.zoom(bbox.height))
+        this.drawX(canvas, bbox.x, bbox.y, bbox.width, bbox.height)
       })
     }
   }
@@ -496,7 +462,7 @@ class BBox extends Component {
     const {mouse, currentBbox} = this
 
     if (this.image !== null) {
-      const currentBboxes = this.bboxes[this.image.name]
+      const currentBboxes = this.bboxes
 
       for (let className in currentBboxes) {
         for (let i = 0; i < currentBboxes[className].length; i++) {
@@ -552,20 +518,20 @@ class BBox extends Component {
     }
   }
 
-  drawX = (context, x, y, width, height) => {
+  drawX = (canvas, x, y, width, height) => {
     if (drawCenterX === true) {
       const centerX = x + width / 2
       const centerY = y + height / 2
 
-      context.beginPath()
-      context.moveTo(this.zoomX(centerX), this.zoomY(centerY - 10))
-      context.lineTo(this.zoomX(centerX), this.zoomY(centerY + 10))
-      context.stroke()
+      canvas.beginPath()
+      canvas.moveTo(this.zoomX(centerX), this.zoomY(centerY - 10))
+      canvas.lineTo(this.zoomX(centerX), this.zoomY(centerY + 10))
+      canvas.stroke()
 
-      context.beginPath()
-      context.moveTo(this.zoomX(centerX - 10), this.zoomY(centerY))
-      context.lineTo(this.zoomX(centerX + 10), this.zoomY(centerY))
-      context.stroke()
+      canvas.beginPath()
+      canvas.moveTo(this.zoomX(centerX - 10), this.zoomY(centerY))
+      canvas.lineTo(this.zoomX(centerX + 10), this.zoomY(centerY))
+      canvas.stroke()
     }
   }
 
@@ -610,12 +576,6 @@ class BBox extends Component {
     return Math.floor((number - this.screenY) * (1 / this.state.scale) + this.canvasY)
   }
 
-  onLoadImage = (e) => {
-    const img = this.image
-    console.log(img)
-    this.fitZoom(img)
-  }
-
   redraw = () => {
     const img = this.image
     this.canvas.clearRect(0, 0, this.width, this.height)
@@ -627,31 +587,23 @@ class BBox extends Component {
     this.drawExistingBboxes()
   }
 
-  setBBoxStyles = (context, marked) => {
-    context.setLineDash([])
+  setBBoxStyles = (canvas, marked) => {
+    canvas.setLineDash([])
 
     if (marked === false) {
-      context.strokeStyle = borderColor
-      context.fillStyle = backgroundColor
+      canvas.strokeStyle = borderColor
+      canvas.fillStyle = backgroundColor
     } else {
-      context.strokeStyle = markedBorderColor
-      context.fillStyle = markedBackgroundColor
+      canvas.strokeStyle = markedBorderColor
+      canvas.fillStyle = markedBackgroundColor
     }
   }
 
-  setBboxCoordinates = (x, y, width, height) => {
-    const x2 = x + width
-    const y2 = y + height
-
-    // document.getElementById("bboxInformation").innerHTML = `${width}x${height} (${x}, ${y}) (${x2}, ${y2})`
+  get image () {
+    return this.props.image
   }
 
-  loadDefaultImage() {
-    this.image = new Image()
-    this.image.onload = this.onLoadImage
-    this.image.src = '/w.png'
-    console.log(this.image)
-  }
+
 
   fitZoom = (image) => {
     if (image.width > image.height) {
@@ -678,10 +630,10 @@ class BBox extends Component {
   render() {
     return (
       <div className='bbox' ref={this.node_ref}>
-        <h1>This is BBOX {this.height} {this.width} Scale: {this.state.scale}</h1>
+        <h1>This is BBOX Class: {this.props.currentClass} Scale: {this.state.scale}</h1>
         {this.image && (<div>{this.image.height} / {this.image.width}</div>)}
         <div>{this.state.msg}</div>
-        <canvas className='bbox-canvas' ref={this.canvas_ref} tabindex="1"></canvas>
+        <canvas className='bbox-canvas' ref={this.canvas_ref} tabIndex="1"></canvas>
       </div>
     )
   }
