@@ -67,7 +67,7 @@ class App extends Component {
     return (
       <div className="App">
         <Menu />
-        <DrawBbox classes={['word', 'other']}/>
+        {/* <DrawBbox classes={['word', 'other']}/> */}
       </div>
     );
   }
