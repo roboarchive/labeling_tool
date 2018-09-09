@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
 import DrawBbox from './highlevel/drawBbox'
+import FileBrowser from './highlevel/fileBrowser'
 
+import 'reset-css'
 import './App.css'
 
 
@@ -22,6 +24,7 @@ class App extends Component {
     return (
       <div className="App">
         <Menu />
+        <FileBrowser />
         {/* <DrawBbox classes={['word', 'other']}/> */}
       </div>
     );
