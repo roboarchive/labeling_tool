@@ -11,22 +11,30 @@ from tipsi_tools.unix import asucc, cd
 
 PAGE_SIZE = 100
 files = None
-
-
-def list_files(request):
-    global files
-    if not files:
-        files = os.listdir(request.app.args.directory)
-    page = int(request.args.get("page", 0))
-    start = page * PAGE_SIZE
-    end = (page + 1) * PAGE_SIZE
-    return json({"status": "ok", "page": page, "files": files[start:end]})
-
-
+processed_files = None
 BROOM_PATH = "/home/kpi/devel/github/roboarchive-broom"
 DENOIZE_CMD = "./venv/bin/python process_image.py -i {}"
 RAW_BASE = rel_path("./train-bbox/raw/samples")
 CLEAN_BASE = rel_path("./train-bbox/clean/samples")
+STATIC_SRC = 'static/{}'
+STATIC_DST = 'train-bbox/raw/samples/{}'
+
+
+def list_files(request):
+    global files, processed_files
+    if not files:
+        files = sorted(os.listdir(request.app.args.directory))
+    if not processed_files:
+        processed_files = os.listdir(RAW_BASE)
+
+    page = int(request.args.get("page", 0))
+    start = page * PAGE_SIZE
+    end = (page + 1) * PAGE_SIZE
+    tgt_files = files[start:end]
+    out_files = []
+    for fname in tgt_files:
+        out_files.append({'processed': fname in processed_files, 'name': fname})
+    return json({"status": "ok", "page": page, "files": out_files})
 
 
 async def denoize(request):
@@ -41,7 +49,8 @@ async def denoize(request):
         src_output = os.path.join(BROOM_PATH, "output.png")
         dst_output = os.path.join(RAW_BASE, name)
         copy(src_output, dst_output)
-        return json({"name": name})
+        processed_files.append(name)
+        return json({"name": name, 'src': STATIC_SRC.format(name), 'dst': STATIC_DST.format(name)})
 
 
 ROUTES = {"/api/file": list_files}
