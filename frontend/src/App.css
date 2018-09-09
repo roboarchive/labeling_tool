@@ -1,6 +1,7 @@
 .App {
     display: grid;
     height: calc(90vh - 30px);
+    width: 100vw;
     grid-template-rows: 30px auto;
 }
 
@@ -47,4 +48,40 @@
 
 .bbox-canvas {
     border: solid 1px;
+}
+
+
+.file-browser-top {
+    margin-top: 10px;
+    display: inline-grid;
+    grid-gap: 3px;
+    grid-row: 2/2;
+    grid-template-columns: 200px auto auto;
+}
+
+.file-select {
+    grid-column: 1/3;
+    grid-row: 1/1;
+}
+
+.file-source {
+    grid-column: 2/3;
+    grid-row: 1/1;
+}
+
+.file-dest {
+    grid-column: 3/3;
+    grid-row: 1/1;
+}
+
+.processed {
+    color: green;
+}
+
+.not-processed {
+    color: red;
+}
+
+.browser-image {
+    width: 100%;
 }

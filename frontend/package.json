@@ -9,6 +9,7 @@
     "@babel/preset-react": "^7.0.0",
     "@babel/runtime": "^7.0.0",
     "autoprefixer": "7.1.6",
+    "axios": "^0.18.0",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "7.2.3",
     "babel-loader": "^7.1.2",
@@ -29,12 +30,14 @@
     "fs-extra": "3.0.1",
     "html-webpack-plugin": "2.29.0",
     "jest": "20.0.4",
+    "lodash": "^4.17.10",
     "mobx": "^5.1.0",
     "mobx-react": "^5.2.6",
     "object-assign": "4.1.1",
     "postcss-flexbugs-fixes": "3.2.0",
     "postcss-loader": "2.0.8",
     "promise": "8.0.1",
+    "qs": "^6.5.2",
     "raf": "3.4.0",
     "react": "^16.4.2",
     "react-dev-utils": "^5.0.2",
@@ -103,7 +106,7 @@
       [
         "@babel/plugin-proposal-class-properties",
         {
-          "loose": false
+          "loose": true
         }
       ]
     ]

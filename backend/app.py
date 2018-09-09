@@ -38,6 +38,10 @@ def list_files(request):
 
 
 async def denoize(request):
+    global processed_files
+    if not processed_files:
+        processed_files = os.listdir(RAW_BASE)
+
     name = request.args.get("name")
     full_name = rel_path(os.path.join(request.app.args.directory, name))
     if not os.path.exists(full_name):
@@ -53,7 +57,7 @@ async def denoize(request):
         return json({"name": name, 'src': STATIC_SRC.format(name), 'dst': STATIC_DST.format(name)})
 
 
-ROUTES = {"/api/file": list_files}
+ROUTES = {'/api/file': list_files, '/api/denoize': denoize}
 
 
 def parse_args():
@@ -74,6 +78,7 @@ async def run_server(loop, args, host="127.0.0.1", port=9093):
     for uri, func in ROUTES.items():
         app.add_route(func, uri)
     app.static("/api/static/", args.directory)
+    app.static("/api/train-bbox/", rel_path('./train-bbox'))
     await app.create_server(host, port)
 
 
