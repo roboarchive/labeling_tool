@@ -61,7 +61,7 @@ class Files {
 
   dest = () => {
     if (this.curr !== null && this.curr.processed) {
-      return `/api/train-bbox/raw/samples/${this.curr.name}`
+      return `/api/train-bbox/${this.curr.name}`
     }
     return null
   }

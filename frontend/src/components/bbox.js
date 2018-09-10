@@ -1,5 +1,6 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from 'react'
+import PropTypes from 'prop-types'
+import _ from 'lodash'
 
 
 const minZoom = 0.1 // Smallest zoom allowed
@@ -40,10 +41,7 @@ class BBox extends Component {
       msg: '',
     }
     this.currentBbox = null
-    console.log('Set bboxes in bbox.js')
-    console.log(props.existingBboxes)
-
-    this.bboxes = props.existingBboxes
+    this.bboxes = _.cloneDeep(props.existingBboxes)
     this.event_listeners = {}
   }
 
@@ -189,6 +187,7 @@ class BBox extends Component {
       this.mouse.buttonR = false
       this.mouse.buttonL = false
     }
+
     this.moveBbox()
     this.resizeBbox()
     this.changeCursorByLocation()
@@ -216,61 +215,6 @@ class BBox extends Component {
     }
   }
 
-  resizeBbox = () => {
-    const {mouse, currentBbox} = this
-    if (mouse.buttonL === true && currentBbox !== null) {
-      const topLeftX = currentBbox.bbox.x
-      const topLeftY = currentBbox.bbox.y
-      const bottomLeftX = currentBbox.bbox.x
-      const bottomLeftY = currentBbox.bbox.y + currentBbox.bbox.height
-      const topRightX = currentBbox.bbox.x + currentBbox.bbox.width
-      const topRightY = currentBbox.bbox.y
-      const bottomRightX = currentBbox.bbox.x + currentBbox.bbox.width
-      const bottomRightY = currentBbox.bbox.y + currentBbox.bbox.height
-
-      // Get correct corner
-      if (mouse.startRealX >= (topLeftX - edgeSize) && mouse.startRealX <= (topLeftX + edgeSize)
-          && mouse.startRealY >= (topLeftY - edgeSize) && mouse.startRealY <= (topLeftY + edgeSize)) {
-
-        currentBbox.resizing = "topLeft"
-      } else if (mouse.startRealX >= (bottomLeftX - edgeSize) && mouse.startRealX <= (bottomLeftX + edgeSize)
-                 && mouse.startRealY >= (bottomLeftY - edgeSize) && mouse.startRealY <= (bottomLeftY + edgeSize)) {
-
-        currentBbox.resizing = "bottomLeft"
-      } else if (mouse.startRealX >= (topRightX - edgeSize) && mouse.startRealX <= (topRightX + edgeSize)
-                 && mouse.startRealY >= (topRightY - edgeSize) && mouse.startRealY <= (topRightY + edgeSize)) {
-
-        currentBbox.resizing = "topRight"
-      } else if (mouse.startRealX >= (bottomRightX - edgeSize) && mouse.startRealX <= (bottomRightX + edgeSize)
-                 && mouse.startRealY >= (bottomRightY - edgeSize) && mouse.startRealY <= (bottomRightY + edgeSize)) {
-
-        currentBbox.resizing = "bottomRight"
-      }
-
-      if (currentBbox.resizing === "topLeft") {
-        currentBbox.bbox.x = mouse.realX
-        currentBbox.bbox.y = mouse.realY
-        currentBbox.bbox.width = currentBbox.originalX + currentBbox.originalWidth - mouse.realX
-        currentBbox.bbox.height = currentBbox.originalY + currentBbox.originalHeight - mouse.realY
-      } else if (currentBbox.resizing === "bottomLeft") {
-        currentBbox.bbox.x = mouse.realX
-        currentBbox.bbox.y = mouse.realY - (mouse.realY - currentBbox.originalY)
-        currentBbox.bbox.width = currentBbox.originalX + currentBbox.originalWidth - mouse.realX
-        currentBbox.bbox.height = mouse.realY - currentBbox.originalY
-      } else if (currentBbox.resizing === "topRight") {
-        currentBbox.bbox.x = mouse.realX - (mouse.realX - currentBbox.originalX)
-        currentBbox.bbox.y = mouse.realY
-        currentBbox.bbox.width = mouse.realX - currentBbox.originalX
-        currentBbox.bbox.height = currentBbox.originalY + currentBbox.originalHeight - mouse.realY
-      } else if (currentBbox.resizing === "bottomRight") {
-        currentBbox.bbox.x = mouse.realX - (mouse.realX - currentBbox.originalX)
-        currentBbox.bbox.y = mouse.realY - (mouse.realY - currentBbox.originalY)
-        currentBbox.bbox.width = mouse.realX - currentBbox.originalX
-        currentBbox.bbox.height = mouse.realY - currentBbox.originalY
-      }
-    }
-  }
-
   storeNewBbox = (movedWidth, movedHeight) => {
     const bbox = {
       x: Math.min(this.mouse.startRealX, this.mouse.realX),
@@ -286,7 +230,6 @@ class BBox extends Component {
     }
 
     this.bboxes[this.currentClass].push(bbox)
-
     this.currentBbox = {
       bbox: bbox,
       index: this.bboxes[this.currentClass].length - 1,
@@ -325,8 +268,7 @@ class BBox extends Component {
   }
 
   resizeBbox = () => {
-    const currentBbox = this.currentBbox
-    const mouse = this.mouse
+    const {currentBbox, mouse} = this
 
     if (mouse.buttonL === true && currentBbox !== null) {
       const topLeftX = currentBbox.bbox.x
@@ -382,8 +324,7 @@ class BBox extends Component {
   }
 
   setBboxMarkedState = () => {
-    const currentBbox = this.currentBbox
-    const mouse = this.mouse
+    const {currentBbox, mouse} = this
 
     if (currentBbox === null || (currentBbox.moving === false && currentBbox.resizing === null)) {
       const currentBboxes = this.bboxes

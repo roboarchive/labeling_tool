@@ -33,7 +33,7 @@ class DrawBbox extends Component {
   loadImage = (name) => {
     this.image = new Image()
     this.image.onload = this.onLoadImage
-    this.image.src = `/api/train-bbox/raw/samples/${name}`
+    this.image.src = `/api/train-bbox/${name}`
   }
 
   componentDidMount() {

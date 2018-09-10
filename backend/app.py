@@ -10,15 +10,21 @@ from sanic.response import json
 from tipsi_tools.python import rel_path
 from tipsi_tools.unix import asucc, cd
 
+
+def mkdirp(path):
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
 PAGE_SIZE = 100
 files = None
 processed_files = None
-BROOM_PATH = "/home/kpi/devel/github/roboarchive-broom"
+BROOM_PATH = rel_path('../../roboarchive-broom')
 DENOIZE_CMD = "./venv/bin/python process_image.py -i {}"
-RAW_BASE = rel_path("./train-bbox/raw/samples")
-CLEAN_BASE = rel_path("./train-bbox/clean/samples")
+RAW_BASE = rel_path("./train-bbox/raw/samples", check=False)
+CLEAN_BASE = rel_path("./train-bbox/clean/samples", check=False)
 STATIC_SRC = 'static/{}'
-STATIC_DST = 'train-bbox/raw/samples/{}'
+STATIC_DST = '{}'
 
 
 def list_files(request):
@@ -93,6 +99,7 @@ def parse_args():
     parser.add_argument(
         "-d", "--directory", default="./images", help="Directory with source images"
     )
+    parser.add_argument('-r', '--raw-base', default='./train-bbox/raw/samples')
     return parser.parse_args()
 
 
@@ -108,7 +115,7 @@ async def run_server(loop, args, host="127.0.0.1", port=9093):
         else:
             app.add_route(func, uri)
     app.static("/api/static/", args.directory)
-    app.static("/api/train-bbox/", rel_path('./train-bbox'))
+    app.static("/api/train-bbox/", RAW_BASE)
     await app.create_server(host, port)
 
 
@@ -120,4 +127,8 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main(parse_args())
+    args = parse_args()
+    RAW_BASE = mkdirp(rel_path(args.raw_base, check=False))
+    CLEAN_BASE = mkdirp(rel_path(RAW_BASE.replace('raw', 'clean'), check=False))
+
+    main(args)
