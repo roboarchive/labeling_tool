@@ -18,14 +18,15 @@ class DrawBbox extends Component {
     this.setState({image: this.image})
   }
 
-  loadDefaultImage = () => {
+  loadImage = (name) => {
     this.image = new Image()
     this.image.onload = this.onLoadImage
-    this.image.src = '/w.png'
+    this.image.src = `/api/train-bbox/raw/samples/${name}`
   }
 
   componentDidMount() {
-    this.loadDefaultImage()
+    const {match: {params: {imageName}}} = this.props
+    this.loadImage(imageName)
   }
 
   selectClass = (e) => {
@@ -39,6 +40,8 @@ class DrawBbox extends Component {
     if (!image) {
       return <h2>Loading</h2>
     }
+
+
     return (
       <div className="ltool">
         <LabelSelector classes={this.props.classes} value={this.state.currentClass} onChange={this.selectClass}/>

@@ -1,7 +1,10 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { Link } from 'react-router-dom'
 import { observer } from 'mobx-react'
+
 import { files } from '../api'
+
 
 
 @observer
@@ -58,7 +61,11 @@ class FileSource extends Component {
 @observer
 class FileDest extends Component {
   showImage () {
-    return <img className='browser-image' src={this.fileName} alt='dest'/>
+    return (
+      <Link to={`/boxes/${this.props.files.curr.name}`}>
+        <img className='browser-image' src={this.fileName} alt='dest'/>
+      </Link>
+    )
   }
 
   get fileName () {

@@ -14,8 +14,6 @@ class Menu extends Component {
     return (
       <div className='menu'>
         <div className='menu-item'><Link to='/'>Browser</Link></div>
-        <div className='menu-item'><Link to='/boxes'>Boxes</Link></div>
-        {/* <div className='menu-item'><Link to='/boxes'>Boxes</Link></div> */}
       </div>
     )
   }
@@ -27,7 +25,7 @@ class App extends Component {
       <Router>
         <div className="App">
           <Menu />
-          <Route path='/boxes' render={(props) => <DrawBbox classes={['word', 'other']} {...props} />}/>
+          <Route path='/boxes/:imageName' render={(props) => <DrawBbox classes={['word', 'other']} {...props} />}/>
           <Route exact path='/' component={FileBrowser} />
         </div>
       </Router>
