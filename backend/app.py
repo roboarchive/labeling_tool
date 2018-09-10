@@ -4,6 +4,7 @@ import os
 from shutil import copy
 
 import uvloop
+import yaml
 from sanic import Sanic
 from sanic.response import json
 from tipsi_tools.python import rel_path
@@ -57,7 +58,32 @@ async def denoize(request):
         return json({"name": name, 'src': STATIC_SRC.format(name), 'dst': STATIC_DST.format(name)})
 
 
-ROUTES = {'/api/file': list_files, '/api/denoize': denoize}
+async def bbox_handler(request, image_name):
+    path = os.path.join(CLEAN_BASE, f'{image_name}.yaml')
+    if request.method == 'GET':
+        if not os.path.exists(path):
+            bboxes = {}
+        else:
+            with open(path) as f:
+                bboxes = yaml.load(f)
+        return json({'bboxes': bboxes})
+        return json({'method': 'GET'})
+    elif request.method == 'POST':
+        bboxes = request.json['bboxes']
+        if not bboxes and os.path.exists(path):
+            os.unlink(path)
+        else:
+            with open(path, 'w') as f:
+                yaml.dump(bboxes, f)
+        return json({'bboxes': bboxes})
+    raise NotImplementedError
+
+
+ROUTES = {
+    '/api/file': list_files,
+    '/api/denoize': denoize,
+    '/api/bbox/<image_name>': {'handler': bbox_handler, 'methods': ['GET', 'POST']},
+}
 
 
 def parse_args():
@@ -76,7 +102,11 @@ async def run_server(loop, args, host="127.0.0.1", port=9093):
     app.denoize_lock = asyncio.Lock(loop=loop)
 
     for uri, func in ROUTES.items():
-        app.add_route(func, uri)
+        if isinstance(func, dict):
+            params = {'uri': uri, **func}
+            app.add_route(**params)
+        else:
+            app.add_route(func, uri)
     app.static("/api/static/", args.directory)
     app.static("/api/train-bbox/", rel_path('./train-bbox'))
     await app.create_server(host, port)

@@ -8,11 +8,39 @@ class Files {
   @observable page = 0
   @observable currIdx = null
   @observable processing = false
+  @observable currentBboxes = null
 
   constructor () {
     this.uri = '/api/file'
     this.denoize = '/api/denoize'
     this.loadFiles()
+  }
+
+  setIdx(idx) {
+    if (this.list.length === 0){
+      return
+    }
+    this.currIdx = idx
+    this.currentBboxes = null
+    axios.get(`/api/bbox/${this.list[this.currIdx].name}`).then(this.setImage)
+  }
+
+  setIdxByName(imageName) {
+    if (this.list.length === 0){
+      return
+    }
+    return this.setIdx(_.findIndex(this.list, i => i.name === imageName))
+  }
+
+  saveBboxes = async (bboxes) => {
+    console.log(`Save idx: ${this.currIdx}`)
+    const resp = await axios.post(`/api/bbox/${this.curr.name}`, {bboxes: bboxes})
+    this.currentBboxes = resp.data['bboxes']
+  }
+
+  setImage = (resp) => {
+    console.log(resp.data.bboxes)
+    this.currentBboxes = resp.data['bboxes']
   }
 
   get curr() {

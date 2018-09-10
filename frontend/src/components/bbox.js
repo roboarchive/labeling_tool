@@ -22,13 +22,13 @@ function prevent (e) {
 
 class BBox extends Component {
   static defaultProps = {
-    existing_bboxes: {}
+    existingBboxes: {}
   }
 
   static propTypes = {
     image: PropTypes.object.isRequired,
     currentClass: PropTypes.string.isRequired,
-    existing_bboxes: PropTypes.object,
+    existingBboxes: PropTypes.object,
   }
 
   constructor(props) {
@@ -40,7 +40,10 @@ class BBox extends Component {
       msg: '',
     }
     this.currentBbox = null
-    this.bboxes = props.existing_bboxes
+    console.log('Set bboxes in bbox.js')
+    console.log(props.existingBboxes)
+
+    this.bboxes = props.existingBboxes
     this.event_listeners = {}
   }
 
@@ -630,9 +633,7 @@ class BBox extends Component {
   render() {
     return (
       <div className='bbox' ref={this.node_ref}>
-        <h1>This is BBOX Class: {this.props.currentClass} Scale: {this.state.scale}</h1>
-        {this.image && (<div>{this.image.height} / {this.image.width}</div>)}
-        <div>{this.state.msg}</div>
+        <h1>Current class: {this.props.currentClass} Scale: {this.state.scale}</h1>
         <canvas className='bbox-canvas' ref={this.canvas_ref} tabIndex="1"></canvas>
       </div>
     )

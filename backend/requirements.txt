@@ -1,5 +1,6 @@
 sanic==0.7.0
 tipsi-tools==1.36.*
+pyyaml==3.13
 
 flake8==3.5.0
 pytest-asyncio==0.9.*

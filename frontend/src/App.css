@@ -1,6 +1,6 @@
 .App {
     display: grid;
-    height: calc(90vh - 30px);
+    height: calc(95vh - 30px);
     width: 100vw;
     grid-template-rows: 30px auto;
 }
@@ -30,8 +30,14 @@
 }
 
 .lselect {
-    grind-column: 1/2;
+    grid-row: 2/2;
+    grid-column: 1/2;
     border: solid 1px;
+}
+
+.saveButton {
+    grid-column: 1/2;
+    grid-row: 1/2;
 }
 
 .lselect > select {
@@ -44,6 +50,8 @@
 
 .bbox {
     grid-column: 2/2;
+    grid-row-start: 1;
+    grid-row-end: span 3;
 }
 
 .bbox-canvas {

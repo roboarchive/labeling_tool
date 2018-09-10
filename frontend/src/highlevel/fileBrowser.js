@@ -6,13 +6,16 @@ import { observer } from 'mobx-react'
 import { files } from '../api'
 
 
-
 @observer
 class FileList extends Component {
+  static propTypes = {
+    files: PropTypes.object.isRequired,
+  }
+
   fileClick(idx) {
     return () => {
       console.log(`On click idx: ${idx} => ${this.props.files.list[idx].name}`)
-      this.props.files.currIdx = idx
+      this.props.files.setIdx(idx)
     }
   }
 
@@ -35,6 +38,9 @@ class FileList extends Component {
 
 @observer
 class FileSource extends Component {
+  static propTypes = {
+    files: PropTypes.object.isRequired,
+  }
 
   showImage () {
     return <img className='browser-image' src={this.fileName} alt='src'/>
@@ -60,6 +66,10 @@ class FileSource extends Component {
 
 @observer
 class FileDest extends Component {
+  static propTypes = {
+    files: PropTypes.object.isRequired,
+  }
+
   showImage () {
     return (
       <Link to={`/boxes/${this.props.files.curr.name}`}>
