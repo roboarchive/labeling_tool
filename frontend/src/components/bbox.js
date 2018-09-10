@@ -100,8 +100,8 @@ class BBox extends Component {
 
   componentWillUnmount() {
     const canvas = this.canvas_ref.current
-    for (const event of this.event_listeners) {
-      for (const listener of this.event_listeners.pop()){
+    for (const event in this.event_listeners) {
+      for (const listener of this.event_listeners[event]){
         canvas.removeEventListener(event, listener)
       }
     }
